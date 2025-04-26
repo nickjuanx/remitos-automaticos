@@ -1,23 +1,23 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Verificar si el DNI existe y si tiene contraseña
       const { data: usuario } = await supabase
         .from("usuarios")
         .select("password")
@@ -30,11 +30,9 @@ const LoginForm = () => {
       }
 
       if (!usuario.password) {
-        // Primera vez - necesita establecer contraseña
         setIsFirstLogin(true);
         if (!password) return;
 
-        // Actualizar la contraseña
         const { error: updateError } = await supabase
           .from("usuarios")
           .update({ password })
@@ -42,14 +40,14 @@ const LoginForm = () => {
 
         if (updateError) throw updateError;
         toast.success("Contraseña establecida correctamente");
-        
+        navigate("/dashboard");
       } else {
-        // Login normal
         if (usuario.password !== password) {
           toast.error("Contraseña incorrecta");
           return;
         }
         toast.success("Login exitoso");
+        navigate("/dashboard");
       }
 
     } catch (error) {
