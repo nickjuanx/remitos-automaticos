@@ -2,6 +2,8 @@
 import { useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface SignaturePadProps {
   onSave: (signature: string) => void;
@@ -20,6 +22,9 @@ const SignaturePad = ({ onSave }: SignaturePadProps) => {
     if (padRef.current && !isEmpty) {
       const signature = padRef.current.toDataURL();
       onSave(signature);
+      toast.success("Firma guardada", {
+        icon: <Check className="h-4 w-4" />,
+      });
     }
   };
 
@@ -38,7 +43,12 @@ const SignaturePad = ({ onSave }: SignaturePadProps) => {
         <Button type="button" variant="outline" onClick={handleClear}>
           Limpiar
         </Button>
-        <Button type="button" onClick={handleSave} disabled={isEmpty}>
+        <Button 
+          type="button" 
+          onClick={handleSave} 
+          disabled={isEmpty}
+          className="bg-[#5CB874] hover:bg-[#4ca363]"
+        >
           Guardar Firma
         </Button>
       </div>

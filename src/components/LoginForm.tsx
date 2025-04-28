@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 const LoginForm = () => {
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
+  const [clientName, setClientName] = useState("");
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -60,11 +62,28 @@ const LoginForm = () => {
 
   return (
     <Card className="w-[350px]">
-      <CardHeader>
+      <CardHeader className="text-center">
+        <div className="flex justify-center mb-4">
+          <img
+            src="/lovable-uploads/b492149c-565d-4e6a-aaef-0b15d0f5bcd7.png"
+            alt="Logo"
+            className="h-12 w-auto"
+          />
+        </div>
         <CardTitle>Acceso al Sistema</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              type="text"
+              placeholder="Nombre del cliente"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              required
+            />
+          </div>
+
           <div className="space-y-2">
             <Input
               type="text"
@@ -77,6 +96,7 @@ const LoginForm = () => {
               title="Por favor ingrese un DNI válido de 8 dígitos"
             />
           </div>
+
           {(isFirstLogin || dni) && (
             <div className="space-y-2">
               <Input
@@ -88,7 +108,7 @@ const LoginForm = () => {
               />
             </div>
           )}
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-[#5CB874]" disabled={loading}>
             {loading ? "Procesando..." : isFirstLogin ? "Establecer Contraseña" : "Ingresar"}
           </Button>
         </form>
