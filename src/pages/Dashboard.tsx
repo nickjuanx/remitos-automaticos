@@ -14,7 +14,7 @@ const Dashboard = () => {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Crear Remito</CardTitle>
+          <CardTitle>Formulario de Trabajo</CardTitle>
         </CardHeader>
         <CardContent>
           <RemitForm />
