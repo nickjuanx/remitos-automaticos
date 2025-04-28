@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,7 @@ import SignaturePad from "./SignaturePad";
 import { toast } from "sonner";
 
 interface FormData {
+  clientName: string;
   domicilio: string;
   localidad: string;
   solicitante: string;
@@ -24,6 +24,7 @@ interface FormData {
 
 const RemitForm = () => {
   const [formData, setFormData] = useState<FormData>({
+    clientName: "",
     domicilio: "",
     localidad: "",
     solicitante: "",
@@ -69,8 +70,8 @@ const RemitForm = () => {
       if (!response.ok) throw new Error("Error al enviar el remito");
       
       toast.success("Remito enviado correctamente");
-      // Limpiar el formulario
       setFormData({
+        clientName: "",
         domicilio: "",
         localidad: "",
         solicitante: "",
@@ -95,6 +96,17 @@ const RemitForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
+        <div className="grid gap-2">
+          <Label htmlFor="clientName">Nombre del cliente</Label>
+          <Input
+            id="clientName"
+            name="clientName"
+            value={formData.clientName}
+            onChange={handleInputChange}
+            required
+          />
+        </div>
+
         <div className="grid gap-2">
           <Label htmlFor="domicilio">Domicilio</Label>
           <Input

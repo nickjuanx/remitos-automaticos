@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 const LoginForm = () => {
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
-  const [clientName, setClientName] = useState("");
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -74,16 +72,6 @@ const LoginForm = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              type="text"
-              placeholder="Nombre del cliente"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              required
-            />
-          </div>
-
           <div className="space-y-2">
             <Input
               type="text"
