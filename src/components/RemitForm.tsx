@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SignaturePad from "./SignaturePad";
 import { toast } from "sonner";
 import { Asterisk } from "lucide-react";
-
 interface FormData {
   formType: "orden" | "remito";
   clientName: string;
@@ -25,7 +23,6 @@ interface FormData {
   firma: string;
   aclaraciones: string;
 }
-
 const RemitForm = () => {
   const [formData, setFormData] = useState<FormData>({
     formType: "remito",
@@ -43,9 +40,7 @@ const RemitForm = () => {
     firma: "",
     aclaraciones: ""
   });
-
   const [loading, setLoading] = useState(false);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
       name,
@@ -56,21 +51,18 @@ const RemitForm = () => {
       [name]: value
     }));
   };
-
   const handleRadioChange = (value: "orden" | "remito") => {
     setFormData(prev => ({
       ...prev,
       formType: value
     }));
   };
-
   const handleSignatureSave = (signatureData: string) => {
     setFormData(prev => ({
       ...prev,
       firma: signatureData
     }));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -107,20 +99,12 @@ const RemitForm = () => {
       setLoading(false);
     }
   };
-
-  const RequiredMark = () => (
-    <Asterisk className="inline-block ml-1 text-red-500" size={8} />
-  );
-
+  const RequiredMark = () => <Asterisk className="inline-block ml-1 text-red-500" size={8} />;
   return <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <div className="grid gap-2">
           <Label htmlFor="formType">Tipo de formulario <RequiredMark /></Label>
-          <RadioGroup 
-            value={formData.formType} 
-            onValueChange={handleRadioChange as (value: string) => void}
-            className="flex gap-4"
-          >
+          <RadioGroup value={formData.formType} onValueChange={handleRadioChange as (value: string) => void} className="flex gap-4 my-[5px]">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="orden" id="orden" />
               <Label htmlFor="orden">Orden de trabajo</Label>
@@ -203,5 +187,4 @@ const RemitForm = () => {
       </Button>
     </form>;
 };
-
 export default RemitForm;
