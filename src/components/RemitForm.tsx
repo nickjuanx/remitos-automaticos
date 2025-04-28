@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import SignaturePad from "./SignaturePad";
 import { toast } from "sonner";
-
 interface FormData {
   clientName: string;
   domicilio: string;
@@ -21,7 +20,6 @@ interface FormData {
   firma: string;
   aclaraciones: string;
 }
-
 const RemitForm = () => {
   const [formData, setFormData] = useState<FormData>({
     clientName: "",
@@ -36,39 +34,37 @@ const RemitForm = () => {
     receptorNombre: "",
     receptorDni: "",
     firma: "",
-    aclaraciones: "",
+    aclaraciones: ""
   });
   const [loading, setLoading] = useState(false);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-
   const handleSignatureSave = (signatureData: string) => {
-    setFormData((prev) => ({ ...prev, firma: signatureData }));
+    setFormData(prev => ({
+      ...prev,
+      firma: signatureData
+    }));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const response = await fetch(
-        "https://n8nwebhook.botec.tech/webhook/2a4fe561-dd0a-4a0c-95c9-df684e13d8b9",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
+      const response = await fetch("https://n8nwebhook.botec.tech/webhook/2a4fe561-dd0a-4a0c-95c9-df684e13d8b9", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
       if (!response.ok) throw new Error("Error al enviar el remito");
-      
       toast.success("Remito enviado correctamente");
       setFormData({
         clientName: "",
@@ -83,7 +79,7 @@ const RemitForm = () => {
         receptorNombre: "",
         receptorDni: "",
         firma: "",
-        aclaraciones: "",
+        aclaraciones: ""
       });
     } catch (error) {
       console.error(error);
@@ -92,133 +88,61 @@ const RemitForm = () => {
       setLoading(false);
     }
   };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+  return <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <div className="grid gap-2">
           <Label htmlFor="clientName">Nombre del cliente</Label>
-          <Input
-            id="clientName"
-            name="clientName"
-            value={formData.clientName}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="clientName" name="clientName" value={formData.clientName} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="domicilio">Domicilio</Label>
-          <Input
-            id="domicilio"
-            name="domicilio"
-            value={formData.domicilio}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="domicilio" name="domicilio" value={formData.domicilio} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="localidad">Localidad</Label>
-          <Input
-            id="localidad"
-            name="localidad"
-            value={formData.localidad}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="localidad" name="localidad" value={formData.localidad} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="solicitante">Solicitante del pedido</Label>
-          <Input
-            id="solicitante"
-            name="solicitante"
-            value={formData.solicitante}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="solicitante" name="solicitante" value={formData.solicitante} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="tecnicos">Técnico/s interviniente/s</Label>
-          <Input
-            id="tecnicos"
-            name="tecnicos"
-            value={formData.tecnicos}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="tecnicos" name="tecnicos" value={formData.tecnicos} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="telefono">Teléfono</Label>
-          <Input
-            id="telefono"
-            name="telefono"
-            type="tel"
-            value={formData.telefono}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="telefono" name="telefono" type="tel" value={formData.telefono} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="tareasRealizadas">Tareas realizadas</Label>
-          <Textarea
-            id="tareasRealizadas"
-            name="tareasRealizadas"
-            value={formData.tareasRealizadas}
-            onChange={handleInputChange}
-            required
-          />
+          <Textarea id="tareasRealizadas" name="tareasRealizadas" value={formData.tareasRealizadas} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="horasEmpleadas">Cantidad de horas empleadas</Label>
-          <Input
-            id="horasEmpleadas"
-            name="horasEmpleadas"
-            type="number"
-            value={formData.horasEmpleadas}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="horasEmpleadas" name="horasEmpleadas" type="number" value={formData.horasEmpleadas} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="trabajoRealizado">Trabajo realizado</Label>
-          <Textarea
-            id="trabajoRealizado"
-            name="trabajoRealizado"
-            value={formData.trabajoRealizado}
-            onChange={handleInputChange}
-            required
-          />
+          <Textarea id="trabajoRealizado" name="trabajoRealizado" value={formData.trabajoRealizado} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="receptorNombre">Nombre de quien recepcionó el trabajo</Label>
-          <Input
-            id="receptorNombre"
-            name="receptorNombre"
-            value={formData.receptorNombre}
-            onChange={handleInputChange}
-            required
-          />
+          <Input id="receptorNombre" name="receptorNombre" value={formData.receptorNombre} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
           <Label htmlFor="receptorDni">DNI de quien recepcionó el trabajo</Label>
-          <Input
-            id="receptorDni"
-            name="receptorDni"
-            value={formData.receptorDni}
-            onChange={handleInputChange}
-            required
-            maxLength={8}
-            pattern="\d{8}"
-          />
+          <Input id="receptorDni" name="receptorDni" value={formData.receptorDni} onChange={handleInputChange} required maxLength={8} pattern="\d{8}" />
         </div>
 
         <div className="grid gap-2">
@@ -227,21 +151,14 @@ const RemitForm = () => {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="aclaraciones">Aclaraciones</Label>
-          <Textarea
-            id="aclaraciones"
-            name="aclaraciones"
-            value={formData.aclaraciones}
-            onChange={handleInputChange}
-          />
+          <Label htmlFor="aclaraciones">Observaciones</Label>
+          <Textarea id="aclaraciones" name="aclaraciones" value={formData.aclaraciones} onChange={handleInputChange} />
         </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Enviando..." : "Enviar Remito"}
       </Button>
-    </form>
-  );
+    </form>;
 };
-
 export default RemitForm;
