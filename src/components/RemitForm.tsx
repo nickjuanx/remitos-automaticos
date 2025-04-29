@@ -162,7 +162,7 @@ const RemitForm = () => {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="receptorNombre">Nombre de quien recibió el trabajo <RequiredMark /></Label>
+          <Label htmlFor="receptorNombre">Nombre de quien recepcionó el trabajo <RequiredMark /></Label>
           <Input id="receptorNombre" name="receptorNombre" value={formData.receptorNombre} onChange={handleInputChange} required />
         </div>
 
