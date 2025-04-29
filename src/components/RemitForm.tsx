@@ -145,15 +145,15 @@ const RemitForm = () => {
           <Label htmlFor="tecnicos">Técnico/s interviniente/s <RequiredMark /></Label>
           <Input id="tecnicos" name="tecnicos" value={formData.tecnicos} onChange={handleInputChange} required />
         </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="horasEmpleadas">Cantidad de horas empleadas <RequiredMark /></Label>
-          <Input id="horasEmpleadas" name="horasEmpleadas" type="number" value={formData.horasEmpleadas} onChange={handleInputChange} required />
-        </div>
-
+        
         <div className="grid gap-2">
           <Label htmlFor="tareasRealizadas">Tareas Realizadas Explicadas A <RequiredMark /></Label>
           <Textarea id="tareasRealizadas" name="tareasRealizadas" value={formData.tareasRealizadas} onChange={handleInputChange} required />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="horasEmpleadas">Cantidad de horas empleadas <RequiredMark /></Label>
+          <Input id="horasEmpleadas" name="horasEmpleadas" type="number" value={formData.horasEmpleadas} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
@@ -162,7 +162,7 @@ const RemitForm = () => {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="receptorNombre">Nombre de quien solicitó el trabajo <RequiredMark /></Label>
+          <Label htmlFor="receptorNombre">Nombre de quien recibió el trabajo <RequiredMark /></Label>
           <Input id="receptorNombre" name="receptorNombre" value={formData.receptorNombre} onChange={handleInputChange} required />
         </div>
 
