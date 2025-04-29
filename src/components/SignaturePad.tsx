@@ -1,5 +1,5 @@
 
-import { useRef, useState } from "react";
+import { useRef, useState, forwardRef, useImperativeHandle } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
@@ -9,9 +9,19 @@ interface SignaturePadProps {
   onSave: (signature: string) => void;
 }
 
-const SignaturePad = ({ onSave }: SignaturePadProps) => {
+const SignaturePad = forwardRef<{ clear: () => void }, SignaturePadProps>(({ onSave }, ref) => {
   const padRef = useRef<SignatureCanvas>(null);
   const [isEmpty, setIsEmpty] = useState(true);
+
+  // Expose the clear method to parent components
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      if (padRef.current) {
+        padRef.current.clear();
+        setIsEmpty(true);
+      }
+    }
+  }));
 
   const handleClear = () => {
     padRef.current?.clear();
@@ -54,6 +64,8 @@ const SignaturePad = ({ onSave }: SignaturePadProps) => {
       </div>
     </div>
   );
-};
+});
+
+SignaturePad.displayName = "SignaturePad";
 
 export default SignaturePad;

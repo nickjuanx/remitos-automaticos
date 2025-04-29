@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SignaturePad from "./SignaturePad";
 import { toast } from "sonner";
 import { Asterisk } from "lucide-react";
+
 interface FormData {
   formType: "orden" | "remito";
   clientName: string;
@@ -23,6 +25,7 @@ interface FormData {
   firma: string;
   aclaraciones: string;
 }
+
 const RemitForm = () => {
   const [formData, setFormData] = useState<FormData>({
     formType: "remito",
@@ -40,7 +43,10 @@ const RemitForm = () => {
     firma: "",
     aclaraciones: ""
   });
+  
   const [loading, setLoading] = useState(false);
+  const signaturePadRef = useRef<{ clear: () => void } | null>(null);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
       name,
@@ -51,18 +57,45 @@ const RemitForm = () => {
       [name]: value
     }));
   };
+  
   const handleRadioChange = (value: "orden" | "remito") => {
     setFormData(prev => ({
       ...prev,
       formType: value
     }));
   };
+  
   const handleSignatureSave = (signatureData: string) => {
     setFormData(prev => ({
       ...prev,
       firma: signatureData
     }));
   };
+  
+  const resetForm = () => {
+    setFormData({
+      formType: "remito",
+      clientName: "",
+      domicilio: "",
+      localidad: "",
+      telefono: "",
+      solicitante: "",
+      tecnicos: "",
+      horasEmpleadas: "",
+      tareasRealizadas: "",
+      trabajoRealizado: "",
+      receptorNombre: "",
+      receptorDni: "",
+      firma: "",
+      aclaraciones: ""
+    });
+    
+    // Clear signature pad
+    if (signaturePadRef.current) {
+      signaturePadRef.current.clear();
+    }
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,24 +107,13 @@ const RemitForm = () => {
         },
         body: JSON.stringify(formData)
       });
+      
       if (!response.ok) throw new Error("Error al enviar el formulario");
       toast.success(`${formData.formType === "remito" ? "Remito" : "Orden de trabajo"} enviado correctamente`);
-      setFormData({
-        formType: "remito",
-        clientName: "",
-        domicilio: "",
-        localidad: "",
-        telefono: "",
-        solicitante: "",
-        tecnicos: "",
-        horasEmpleadas: "",
-        tareasRealizadas: "",
-        trabajoRealizado: "",
-        receptorNombre: "",
-        receptorDni: "",
-        firma: "",
-        aclaraciones: ""
-      });
+      
+      // Reset form data and clear signature
+      resetForm();
+      
     } catch (error) {
       console.error(error);
       toast.error(`Error al enviar el ${formData.formType === "remito" ? "remito" : "orden de trabajo"}`);
@@ -99,7 +121,9 @@ const RemitForm = () => {
       setLoading(false);
     }
   };
+  
   const RequiredMark = () => <Asterisk className="inline-block ml-1 text-red-500" size={8} />;
+  
   return <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
         <div className="grid gap-2 my-0">
@@ -147,13 +171,13 @@ const RemitForm = () => {
         </div>
         
         <div className="grid gap-2">
-          <Label htmlFor="tareasRealizadas">Tareas Realizadas Explicadas A <RequiredMark /></Label>
-          <Textarea id="tareasRealizadas" name="tareasRealizadas" value={formData.tareasRealizadas} onChange={handleInputChange} required />
+          <Label htmlFor="horasEmpleadas">Cantidad de horas empleadas <RequiredMark /></Label>
+          <Input id="horasEmpleadas" name="horasEmpleadas" type="number" value={formData.horasEmpleadas} onChange={handleInputChange} required />
         </div>
         
         <div className="grid gap-2">
-          <Label htmlFor="horasEmpleadas">Cantidad de horas empleadas <RequiredMark /></Label>
-          <Input id="horasEmpleadas" name="horasEmpleadas" type="number" value={formData.horasEmpleadas} onChange={handleInputChange} required />
+          <Label htmlFor="tareasRealizadas">Tareas Realizadas Explicadas A <RequiredMark /></Label>
+          <Textarea id="tareasRealizadas" name="tareasRealizadas" value={formData.tareasRealizadas} onChange={handleInputChange} required />
         </div>
 
         <div className="grid gap-2">
@@ -173,7 +197,7 @@ const RemitForm = () => {
 
         <div className="grid gap-2">
           <Label>Firma de quien recepcionó el trabajo <RequiredMark /></Label>
-          <SignaturePad onSave={handleSignatureSave} />
+          <SignaturePad onSave={handleSignatureSave} ref={signaturePadRef} />
         </div>
 
         <div className="grid gap-2">
@@ -187,4 +211,5 @@ const RemitForm = () => {
       </Button>
     </form>;
 };
+
 export default RemitForm;
