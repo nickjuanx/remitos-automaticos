@@ -14,7 +14,7 @@ const LoginForm = () => {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, setCustomSession } = useAuth();
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -27,14 +27,14 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      // First check if this user exists in our usuarios table
-      const { data: usuario } = await supabase
+      // Check if this user exists in our usuarios table
+      const { data: usuario, error: userError } = await supabase
         .from("usuarios")
-        .select("password")
+        .select("password, dni")
         .eq("dni", dni)
         .single();
 
-      if (!usuario) {
+      if (userError || !usuario) {
         toast.error("DNI no encontrado");
         setLoading(false);
         return;
@@ -66,118 +66,23 @@ const LoginForm = () => {
         return;
       }
 
-      // Sign in with custom Supabase auth flow (using email as dni@domain.com)
-      const email = `${dni}@serycon.com`;
+      // Create a custom session using the DNI
+      const customSession = {
+        user: {
+          id: dni,
+          dni: dni,
+          role: 'authenticated',
+        },
+        access_token: 'custom-auth-token',
+        expires_at: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
+      };
 
-      // Check if user exists in auth.users
-      const { data: authUser, error: fetchError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      // If we get a successful auth, just continue to dashboard
-      if (authUser && authUser.session) {
-        console.log("Authentication successful, session created:", authUser.session.access_token ? "Valid token" : "No token");
-        toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
-        navigate("/dashboard");
-        return;
-      }
-
-      // Handle email confirmation errors
-      if (fetchError && fetchError.message.includes("Email not confirmed")) {
-        // Auto-confirm the email (for development purposes)
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              dni
-            },
-            emailRedirectTo: window.location.origin
-          }
-        });
-
-        // Try to sign in immediately (works if email confirmation is disabled in Supabase console)
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (signInData && signInData.session) {
-          console.log("Sign-in after signup successful:", signInData.session.access_token ? "Valid token" : "No token");
-          toast.success("Login exitoso");
-          navigate("/dashboard");
-          return;
-        }
-
-        if (signInError) {
-          if (signInError.message.includes("Email not confirmed")) {
-            toast.error("Es necesario confirmar el email. Por favor revise la configuración en Supabase.");
-            console.error("Email confirmation required. Please disable email confirmation in Supabase dashboard.");
-          } else {
-            toast.error("Error al iniciar sesión");
-            console.error(signInError);
-          }
-          setLoading(false);
-          return;
-        }
-        
-        return;
-      }
-
-      // If user doesn't exist, sign them up
-      if (fetchError && fetchError.message.includes("Invalid login credentials")) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              dni
-            },
-            emailRedirectTo: window.location.origin
-          }
-        });
-
-        if (signUpError) {
-          toast.error("Error al crear la cuenta");
-          console.error(signUpError);
-          setLoading(false);
-          return;
-        }
-
-        // Auto sign in after signup
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (signInData && signInData.session) {
-          console.log("Sign-in after signup successful:", signInData.session.access_token ? "Valid token" : "No token");
-          toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
-          navigate("/dashboard");
-          return;
-        }
-
-        if (signInError) {
-          if (signInError.message.includes("Email not confirmed")) {
-            toast.error("Es necesario confirmar el email. Por favor revise la configuración en Supabase.");
-            console.error("Email confirmation required. Please disable email confirmation in Supabase dashboard.");
-          } else {
-            toast.error("Error al iniciar sesión");
-            console.error(signInError);
-          }
-          setLoading(false);
-        }
-      } else if (fetchError) {
-        if (fetchError.message.includes("Email logins are disabled")) {
-          toast.error("El login por email está desactivado en Supabase. Por favor actívelo en la configuración.");
-          console.error("Email logins are disabled. Please enable email logins in Supabase Authentication settings.");
-        } else {
-          toast.error(`Error: ${fetchError.message}`);
-          console.error(fetchError);
-        }
-        setLoading(false);
-      }
+      // Set the custom session in AuthContext
+      setCustomSession(customSession);
+      
+      console.log("Authentication successful with DNI");
+      toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
+      navigate("/dashboard");
       
     } catch (error) {
       toast.error("Error en el proceso de login");

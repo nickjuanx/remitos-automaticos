@@ -15,6 +15,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     console.log("ProtectedRoute rendering with:", { 
       userExists: !!user, 
       sessionExists: !!session,
+      sessionType: session ? 'custom' : 'none',
       loading 
     });
   }, [user, session, loading]);
