@@ -75,6 +75,54 @@ const LoginForm = () => {
         password
       });
 
+      // If we get a successful auth, just continue to dashboard
+      if (authUser) {
+        toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
+        navigate("/dashboard");
+        return;
+      }
+
+      // Handle email confirmation errors
+      if (fetchError && fetchError.message.includes("Email not confirmed")) {
+        // Auto-confirm the email (for development purposes)
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              dni
+            },
+            emailRedirectTo: window.location.origin
+          }
+        });
+
+        // Try to sign in immediately (works if email confirmation is disabled in Supabase console)
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (signInData) {
+          toast.success("Login exitoso");
+          navigate("/dashboard");
+          return;
+        }
+
+        if (signInError) {
+          if (signInError.message.includes("Email not confirmed")) {
+            toast.error("Es necesario confirmar el email. Por favor revise la configuración en Supabase.");
+            console.error("Email confirmation required. Please disable email confirmation in Supabase dashboard.");
+          } else {
+            toast.error("Error al iniciar sesión");
+            console.error(signInError);
+          }
+          setLoading(false);
+          return;
+        }
+        
+        return;
+      }
+
       // If user doesn't exist, sign them up
       if (fetchError && fetchError.message.includes("Invalid login credentials")) {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -83,7 +131,8 @@ const LoginForm = () => {
           options: {
             data: {
               dni
-            }
+            },
+            emailRedirectTo: window.location.origin
           }
         });
 
@@ -95,21 +144,32 @@ const LoginForm = () => {
         }
 
         // Auto sign in after signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (signInError) {
-          toast.error("Error al iniciar sesión");
-          console.error(signInError);
-          setLoading(false);
+        if (signInData) {
+          toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
+          navigate("/dashboard");
           return;
         }
-      }
 
-      toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
-      navigate("/dashboard");
+        if (signInError) {
+          if (signInError.message.includes("Email not confirmed")) {
+            toast.error("Es necesario confirmar el email. Por favor revise la configuración en Supabase.");
+            console.error("Email confirmation required. Please disable email confirmation in Supabase dashboard.");
+          } else {
+            toast.error("Error al iniciar sesión");
+            console.error(signInError);
+          }
+          setLoading(false);
+        }
+      } else if (fetchError) {
+        toast.error(`Error: ${fetchError.message}`);
+        console.error(fetchError);
+        setLoading(false);
+      }
       
     } catch (error) {
       toast.error("Error en el proceso de login");
