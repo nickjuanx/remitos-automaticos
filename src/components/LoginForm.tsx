@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,13 +14,13 @@ const LoginForm = () => {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  // If user is already logged in, redirect to dashboard
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/dashboard");
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +76,8 @@ const LoginForm = () => {
       });
 
       // If we get a successful auth, just continue to dashboard
-      if (authUser) {
+      if (authUser && authUser.session) {
+        console.log("Authentication successful, session created:", authUser.session.access_token ? "Valid token" : "No token");
         toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
         navigate("/dashboard");
         return;
@@ -102,7 +103,8 @@ const LoginForm = () => {
           password
         });
 
-        if (signInData) {
+        if (signInData && signInData.session) {
+          console.log("Sign-in after signup successful:", signInData.session.access_token ? "Valid token" : "No token");
           toast.success("Login exitoso");
           navigate("/dashboard");
           return;
@@ -149,7 +151,8 @@ const LoginForm = () => {
           password
         });
 
-        if (signInData) {
+        if (signInData && signInData.session) {
+          console.log("Sign-in after signup successful:", signInData.session.access_token ? "Valid token" : "No token");
           toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
           navigate("/dashboard");
           return;
@@ -166,8 +169,13 @@ const LoginForm = () => {
           setLoading(false);
         }
       } else if (fetchError) {
-        toast.error(`Error: ${fetchError.message}`);
-        console.error(fetchError);
+        if (fetchError.message.includes("Email logins are disabled")) {
+          toast.error("El login por email está desactivado en Supabase. Por favor actívelo en la configuración.");
+          console.error("Email logins are disabled. Please enable email logins in Supabase Authentication settings.");
+        } else {
+          toast.error(`Error: ${fetchError.message}`);
+          console.error(fetchError);
+        }
         setLoading(false);
       }
       
@@ -178,6 +186,10 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
+
+  if (user) {
+    return null;
+  }
 
   return (
     <Card className="w-[350px]">
