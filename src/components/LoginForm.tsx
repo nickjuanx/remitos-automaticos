@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const LoginForm = () => {
   const [dni, setDni] = useState("");
@@ -12,12 +14,20 @@ const LoginForm = () => {
   const [isFirstLogin, setIsFirstLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // If user is already logged in, redirect to dashboard
+  if (user) {
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // First check if this user exists in our usuarios table
       const { data: usuario } = await supabase
         .from("usuarios")
         .select("password")
@@ -26,30 +36,81 @@ const LoginForm = () => {
 
       if (!usuario) {
         toast.error("DNI no encontrado");
+        setLoading(false);
         return;
       }
 
       if (!usuario.password) {
+        // First login case - set password
         setIsFirstLogin(true);
-        if (!password) return;
+        if (!password) {
+          setLoading(false);
+          return;
+        }
 
+        // Update password in usuarios table
         const { error: updateError } = await supabase
           .from("usuarios")
           .update({ password })
           .eq("dni", dni);
 
-        if (updateError) throw updateError;
-        toast.success("Contraseña establecida correctamente");
-        navigate("/dashboard");
-      } else {
-        if (usuario.password !== password) {
-          toast.error("Contraseña incorrecta");
+        if (updateError) {
+          toast.error("Error al actualizar la contraseña");
+          console.error(updateError);
+          setLoading(false);
           return;
         }
-        toast.success("Login exitoso");
-        navigate("/dashboard");
+      } else if (usuario.password !== password) {
+        toast.error("Contraseña incorrecta");
+        setLoading(false);
+        return;
       }
 
+      // Sign in with custom Supabase auth flow (using email as dni@domain.com)
+      const email = `${dni}@serycon.com`;
+
+      // Check if user exists in auth.users
+      const { data: authUser, error: fetchError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      // If user doesn't exist, sign them up
+      if (fetchError && fetchError.message.includes("Invalid login credentials")) {
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              dni
+            }
+          }
+        });
+
+        if (signUpError) {
+          toast.error("Error al crear la cuenta");
+          console.error(signUpError);
+          setLoading(false);
+          return;
+        }
+
+        // Auto sign in after signup
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (signInError) {
+          toast.error("Error al iniciar sesión");
+          console.error(signInError);
+          setLoading(false);
+          return;
+        }
+      }
+
+      toast.success(isFirstLogin ? "Contraseña establecida correctamente" : "Login exitoso");
+      navigate("/dashboard");
+      
     } catch (error) {
       toast.error("Error en el proceso de login");
       console.error(error);
