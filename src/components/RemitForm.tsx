@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +44,7 @@ const RemitForm = () => {
   });
   
   const [loading, setLoading] = useState(false);
+  const [firmaGuardada, setFirmaGuardada] = useState(false);
   const signaturePadRef = useRef<{ clear: () => void } | null>(null);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -70,6 +70,7 @@ const RemitForm = () => {
       ...prev,
       firma: signatureData
     }));
+    setFirmaGuardada(true);
   };
   
   const resetForm = () => {
@@ -90,14 +91,22 @@ const RemitForm = () => {
       aclaraciones: ""
     });
     
-    // Clear signature pad
+    // Clear signature pad and reset firma guardada state
     if (signaturePadRef.current) {
       signaturePadRef.current.clear();
     }
+    setFirmaGuardada(false);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación de firma guardada
+    if (!firmaGuardada) {
+      toast.error("Debe guardar la firma antes de enviar el formulario");
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await fetch("https://n8nwebhook.botec.tech/webhook/2a4fe561-dd0a-4a0c-95c9-df684e13d8b9", {
@@ -198,6 +207,16 @@ const RemitForm = () => {
         <div className="grid gap-2">
           <Label>Firma de quien recepcionó el trabajo <RequiredMark /></Label>
           <SignaturePad onSave={handleSignatureSave} ref={signaturePadRef} />
+          {!firmaGuardada && (
+            <p className="text-sm text-red-500 mt-1">
+              Debe guardar la firma antes de enviar el formulario
+            </p>
+          )}
+          {firmaGuardada && (
+            <p className="text-sm text-green-600 mt-1">
+              Firma guardada correctamente
+            </p>
+          )}
         </div>
 
         <div className="grid gap-2">
@@ -206,7 +225,10 @@ const RemitForm = () => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={loading || !firmaGuardada}>
         {loading ? "Enviando..." : `Enviar ${formData.formType === "remito" ? "Remito" : "Orden de trabajo"}`}
       </Button>
     </form>;
