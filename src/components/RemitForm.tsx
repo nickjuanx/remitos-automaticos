@@ -27,7 +27,7 @@ interface FormData {
 
 const RemitForm = () => {
   const [formData, setFormData] = useState<FormData>({
-    formType: "remito",
+    formType: "orden",
     clientName: "",
     domicilio: "",
     localidad: "",
@@ -75,7 +75,7 @@ const RemitForm = () => {
   
   const resetForm = () => {
     setFormData({
-      formType: "remito",
+      formType: "orden",
       clientName: "",
       domicilio: "",
       localidad: "",
@@ -91,7 +91,6 @@ const RemitForm = () => {
       aclaraciones: ""
     });
     
-    // Clear signature pad and reset firma guardada state
     if (signaturePadRef.current) {
       signaturePadRef.current.clear();
     }
@@ -101,7 +100,6 @@ const RemitForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validación de firma guardada
     if (!firmaGuardada) {
       toast.error("Debe guardar la firma antes de enviar el formulario");
       return;
@@ -120,7 +118,6 @@ const RemitForm = () => {
       if (!response.ok) throw new Error("Error al enviar el formulario");
       toast.success(`${formData.formType === "remito" ? "Remito" : "Orden de trabajo"} enviado correctamente`);
       
-      // Reset form data and clear signature
       resetForm();
       
     } catch (error) {
