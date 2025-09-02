@@ -7,6 +7,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import SignaturePad from "./SignaturePad";
 import { toast } from "sonner";
 import { Asterisk } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FormData {
   formType: "orden" | "remito";
@@ -26,6 +28,7 @@ interface FormData {
 }
 
 const RemitForm = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     formType: "orden",
     clientName: "",
@@ -97,6 +100,136 @@ const RemitForm = () => {
     setFirmaGuardada(false);
   };
   
+  const logWebhookAttempt = async (
+    formData: FormData,
+    webhookUrl: string,
+    httpStatus: number | null,
+    responseBody: string,
+    errorMessage: string | null,
+    attemptNumber: number,
+    success: boolean
+  ) => {
+    try {
+      const userDni = user && 'dni' in user ? user.dni as string : null;
+      
+      await supabase.from('webhook_logs').insert({
+        form_data: formData as any,
+        webhook_url: webhookUrl,
+        http_status: httpStatus,
+        response_body: responseBody,
+        error_message: errorMessage,
+        attempt_number: attemptNumber,
+        user_dni: userDni,
+        success: success
+      });
+    } catch (logError) {
+      console.error('Error logging webhook attempt:', logError);
+    }
+  };
+
+  const saveFormBackup = async (formData: FormData) => {
+    try {
+      const userDni = user && 'dni' in user ? user.dni as string : null;
+      
+      const { data, error } = await supabase.from('form_submissions').insert({
+        form_type: formData.formType,
+        client_name: formData.clientName,
+        form_data: formData as any,
+        user_dni: userDni,
+        webhook_sent: false,
+        webhook_success: false,
+        retry_count: 0
+      }).select().single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      console.error('Error saving form backup:', error);
+      throw error;
+    }
+  };
+
+  const updateFormBackup = async (backupId: string, webhookSent: boolean, webhookSuccess: boolean, retryCount: number) => {
+    try {
+      await supabase.from('form_submissions').update({
+        webhook_sent: webhookSent,
+        webhook_success: webhookSuccess,
+        retry_count: retryCount,
+        last_retry_at: new Date().toISOString()
+      }).eq('id', backupId);
+    } catch (error) {
+      console.error('Error updating form backup:', error);
+    }
+  };
+
+  const sendToWebhook = async (formData: FormData, attemptNumber: number = 1): Promise<{ success: boolean, response?: Response, error?: Error }> => {
+    const webhookUrl = "https://n8nwebhook.botec.tech/webhook/serycon";
+    
+    try {
+      console.log(`Intento ${attemptNumber} - Enviando formulario al webhook:`, {
+        url: webhookUrl,
+        clientName: formData.clientName,
+        formType: formData.formType,
+        timestamp: new Date().toISOString()
+      });
+
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const responseText = await response.text();
+      
+      console.log(`Intento ${attemptNumber} - Respuesta del webhook:`, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseText,
+        timestamp: new Date().toISOString()
+      });
+
+      await logWebhookAttempt(
+        formData,
+        webhookUrl,
+        response.status,
+        responseText,
+        response.ok ? null : `HTTP ${response.status}: ${response.statusText}`,
+        attemptNumber,
+        response.ok
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${responseText}`);
+      }
+
+      return { success: true, response };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      
+      console.error(`Intento ${attemptNumber} - Error al enviar al webhook:`, {
+        error: errorMessage,
+        url: webhookUrl,
+        timestamp: new Date().toISOString()
+      });
+
+      await logWebhookAttempt(
+        formData,
+        webhookUrl,
+        null,
+        '',
+        errorMessage,
+        attemptNumber,
+        false
+      );
+
+      return { success: false, error: error as Error };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -106,23 +239,74 @@ const RemitForm = () => {
     }
     
     setLoading(true);
+    let backupId: string | null = null;
+    
     try {
-      const response = await fetch("https://n8nwebhook.botec.tech/webhook/serycon", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-      });
+      // Paso 1: Guardar respaldo en Supabase
+      console.log('Guardando respaldo del formulario en Supabase...');
+      backupId = await saveFormBackup(formData);
+      console.log('Respaldo guardado con ID:', backupId);
       
-      if (!response.ok) throw new Error("Error al enviar el formulario");
-      toast.success(`${formData.formType === "remito" ? "Remito" : "Orden de trabajo"} enviado correctamente`);
+      // Paso 2: Intentar enviar al webhook con reintentos automáticos
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+      let success = false;
       
-      resetForm();
+      for (let attempt = 1; attempt <= maxRetries && !success; attempt++) {
+        if (attempt > 1) {
+          console.log(`Esperando antes del reintento ${attempt}...`);
+          await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Espera incremental
+        }
+        
+        const result = await sendToWebhook(formData, attempt);
+        success = result.success;
+        
+        if (!success) {
+          lastError = result.error || new Error('Error desconocido');
+          if (backupId) {
+            await updateFormBackup(backupId, true, false, attempt);
+          }
+          
+          if (attempt < maxRetries) {
+            console.log(`Intento ${attempt} falló, reintentando...`);
+            toast.error(`Intento ${attempt} falló, reintentando en ${2 * attempt} segundos...`);
+          }
+        } else {
+          // Éxito - actualizar respaldo
+          if (backupId) {
+            await updateFormBackup(backupId, true, true, attempt);
+          }
+          break;
+        }
+      }
+      
+      if (success) {
+        console.log('Formulario enviado exitosamente al webhook');
+        toast.success(`${formData.formType === "remito" ? "Remito" : "Orden de trabajo"} enviado correctamente`);
+        resetForm();
+      } else {
+        // Todos los intentos fallaron
+        const errorMsg = lastError?.message || 'Error desconocido';
+        console.error('Todos los intentos de envío fallaron:', errorMsg);
+        
+        toast.error(
+          `Error al enviar el ${formData.formType === "remito" ? "remito" : "orden de trabajo"}. ` +
+          `Los datos están guardados como respaldo. Error: ${errorMsg}`
+        );
+        
+        // Mostrar información adicional sobre el respaldo
+        toast.info(`Los datos han sido guardados con ID: ${backupId}. Contacte al administrador para recuperar la información.`);
+      }
       
     } catch (error) {
-      console.error(error);
-      toast.error(`Error al enviar el ${formData.formType === "remito" ? "remito" : "orden de trabajo"}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('Error crítico en el proceso de envío:', errorMessage);
+      
+      toast.error(`Error crítico: ${errorMessage}`);
+      
+      if (backupId) {
+        toast.info(`Los datos han sido guardados como respaldo con ID: ${backupId}`);
+      }
     } finally {
       setLoading(false);
     }

@@ -14,11 +14,52 @@ export type Database = {
   }
   public: {
     Tables: {
+      form_submissions: {
+        Row: {
+          client_name: string
+          created_at: string
+          form_data: Json
+          form_type: string
+          id: string
+          last_retry_at: string | null
+          retry_count: number | null
+          updated_at: string
+          user_dni: string | null
+          webhook_sent: boolean | null
+          webhook_success: boolean | null
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          form_data: Json
+          form_type: string
+          id?: string
+          last_retry_at?: string | null
+          retry_count?: number | null
+          updated_at?: string
+          user_dni?: string | null
+          webhook_sent?: boolean | null
+          webhook_success?: boolean | null
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          form_data?: Json
+          form_type?: string
+          id?: string
+          last_retry_at?: string | null
+          retry_count?: number | null
+          updated_at?: string
+          user_dni?: string | null
+          webhook_sent?: boolean | null
+          webhook_success?: boolean | null
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           created_at: string
           dni: string
-          id: string
           password: string | null
           role: string | null
           updated_at: string
@@ -26,7 +67,6 @@ export type Database = {
         Insert: {
           created_at?: string
           dni: string
-          id?: string
           password?: string | null
           role?: string | null
           updated_at?: string
@@ -34,10 +74,48 @@ export type Database = {
         Update: {
           created_at?: string
           dni?: string
-          id?: string
           password?: string | null
           role?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          attempt_number: number | null
+          created_at: string
+          error_message: string | null
+          form_data: Json
+          http_status: number | null
+          id: string
+          response_body: string | null
+          success: boolean | null
+          user_dni: string | null
+          webhook_url: string
+        }
+        Insert: {
+          attempt_number?: number | null
+          created_at?: string
+          error_message?: string | null
+          form_data: Json
+          http_status?: number | null
+          id?: string
+          response_body?: string | null
+          success?: boolean | null
+          user_dni?: string | null
+          webhook_url: string
+        }
+        Update: {
+          attempt_number?: number | null
+          created_at?: string
+          error_message?: string | null
+          form_data?: Json
+          http_status?: number | null
+          id?: string
+          response_body?: string | null
+          success?: boolean | null
+          user_dni?: string | null
+          webhook_url?: string
         }
         Relationships: []
       }

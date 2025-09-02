@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
+import AdminLogs from "./pages/AdminLogs";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/logs" 
+              element={
+                <ProtectedRoute>
+                  <AdminLogs />
                 </ProtectedRoute>
               } 
             />
